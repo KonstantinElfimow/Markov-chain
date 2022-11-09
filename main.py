@@ -1,6 +1,8 @@
 import numpy as np
 import math
 
+""" Общая структура и функции """
+accurateness: str = '.6g'  # Точность до знака
 alphabet: list = list('abcdefg')
 
 
@@ -16,14 +18,14 @@ def entropy(l_p: list) -> np.float64:
         H += value * np.log2(value)
 
         s1 += f' - {value} * log2({value})'
-        s2 += format(-value * np.log2(value), '.5g') + ' + '
+        s2 += format(-value * np.log2(value), accurateness) + ' + '
 
-    H = np.float64(-H)
+    H = np.float64(format(-H, accurateness))
 
     print(s1, ' =\n', s2, ' = ', H)
     print()
 
-    return np.float64(format(H, '.8g'))
+    return np.float64(format(H, accurateness))
 
 
 def transpose_l_dict(lst: list) -> list:
@@ -40,26 +42,6 @@ def transpose_l_dict(lst: list) -> list:
         count = 0
 
     return transposed_l_dict
-
-
-def find_full_conditional_p(list_ensembles_conditional_p: list, dict_ensemble_p: dict) -> list:
-    list_ensembles_full_conditional_p: list = list()
-
-    transposed_l_dict: list = transpose_l_dict(list_ensembles_conditional_p)
-
-    for i in range(len(transposed_l_dict)):
-        ensemble: dict = dict()
-
-        for (key1, value1), (key2, value2) in zip(transposed_l_dict[i].items(), dict_ensemble_p.items()):
-            p = np.float64(format(np.float64(value1) * np.float64(value2), '.5g'))
-            ensemble[f"{key2}{str(key1).split('|')[0]}"] = p
-
-            print(f'p(xi = {key2}, xi+1 = {alphabet[i]}) = p({key2}) * p({key1}) = {value2} * {value1} = {p}')
-
-        print('\n')
-        list_ensembles_full_conditional_p.append(ensemble)
-
-    return list_ensembles_full_conditional_p
 
 
 def make_matrix_from_l_dict(l_dic: list) -> np.array:
@@ -111,7 +93,7 @@ def gauss_pivot_func(matrix: np.array) -> np.array:
         divider = row[nrow]  # диагональный элемент
         if abs(divider) < 1e-10:
             # почти нуль на диагонали. Продолжать не имеет смысла, результат счёта неустойчив
-            raise ValueError(f'Матрица несовместна. Максимальный элемент в столбце {nrow}: {divider:.5g}')
+            raise ValueError(f'Матрица несовместна. Максимальный элемент в столбце {nrow}: {divider:{accurateness}}')
         # делим на диагональный элемент.
         row /= divider
         # теперь надо вычесть приведённую строку из всех нижележащих строчек
@@ -134,6 +116,29 @@ def gauss_pivot_func(matrix: np.array) -> np.array:
     return result_matrix
 
 
+""" Непосредственно цепь Маркова """
+
+
+def find_full_conditional_p(list_ensembles_conditional_p: list, dict_ensemble_p: dict) -> list:
+    list_ensembles_full_conditional_p: list = list()
+
+    transposed_l_dict: list = transpose_l_dict(list_ensembles_conditional_p)
+
+    for i in range(len(transposed_l_dict)):
+        ensemble: dict = dict()
+
+        for (key1, value1), (key2, value2) in zip(transposed_l_dict[i].items(), dict_ensemble_p.items()):
+            p = np.float64(format(np.float64(value1) * np.float64(value2), accurateness))
+            ensemble[f"{key2}{str(key1).split('|')[0]}"] = p
+
+            print(f'p(xi = {key2}, xi+1 = {alphabet[i]}) = p({key2}) * p({key1}) = {value2} * {value1} = {p}')
+
+        print('\n')
+        list_ensembles_full_conditional_p.append(ensemble)
+
+    return list_ensembles_full_conditional_p
+
+
 def markov_chain(list_ensembles_conditional_p: list) -> list:
     print('Вход: \n', list_ensembles_conditional_p)
     print()
@@ -151,7 +156,7 @@ def markov_chain(list_ensembles_conditional_p: list) -> list:
     # p(a), p(b), p(c), ...
     dict_ensemble_p: dict = dict()
     for i in range(len(I_matrix)):
-        dict_ensemble_p[alphabet[i]] = format(I_matrix[i][len(I_matrix[0]) - 1], '.5g')
+        dict_ensemble_p[alphabet[i]] = format(I_matrix[i][len(I_matrix[0]) - 1], accurateness)
 
     print('p(a), p(b), p(c), ...\n', dict_ensemble_p)
     print()
@@ -172,7 +177,7 @@ def markov_chain(list_ensembles_conditional_p: list) -> list:
         full_p += list(lp_i.values())
     H_xi_xi_1 = entropy(full_p)
 
-    H_suffix_xi_xi_1 = np.float64(format(H_xi_xi_1 - H_xi, '.8g'))
+    H_suffix_xi_xi_1 = np.float64(format(H_xi_xi_1 - H_xi, accurateness))
     print(f'H_xi(x_i+1) = H(x_i x_i+1) - H(x_i) = {H_xi_xi_1} - {H_xi} = {H_suffix_xi_xi_1}')
 
     return result
