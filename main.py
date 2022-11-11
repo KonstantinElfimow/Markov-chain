@@ -6,7 +6,7 @@ accurateness: str = '.6g'  # Точность до знака
 alphabet: list = list('abcdefg')
 
 
-def entropy(l_p: list) -> np.float64:
+def entropy(l_p: list) -> float:
     """ Энтропия """
     H: np.float64 = np.float64(0.0)
 
@@ -25,7 +25,36 @@ def entropy(l_p: list) -> np.float64:
     print(s1, ' =\n', s2, ' = ', H)
     print()
 
-    return np.float64(format(H, accurateness))
+    return H
+
+
+def conditional_entropy(full_conditional_p: list, ensemble_p: dict) -> float:
+    """ Энтропия """
+    H: float = 0.0
+
+    s1: str = ''
+    s2: str = ''
+    for i, ensemble in enumerate(full_conditional_p):
+        s1 += f'p({alphabet[i]}) * '
+        s2 += f'{ensemble_p[alphabet[i]]} * '
+        temp1 = ''
+        temp2 = ''
+        for key, value in ensemble.items():
+            value = np.float64(value)
+
+            temp1 += f' - p({key}) * log2(p({key}))'
+            temp2 += format(-value * np.log2(value), accurateness) + ' + '
+            H += float(format(-value * np.log2(value) * ensemble_p.get(alphabet[i]), accurateness))
+
+        s1 += f'({temp1}) + '
+        s2 += f'({temp2}) + '
+
+    H = np.float64(format(H, accurateness))
+
+    print(s1, ' =\n', s2, ' = ', H)
+    print()
+
+    return H
 
 
 def transpose_l_dict(lst: list) -> list:
@@ -156,14 +185,14 @@ def markov_chain(list_ensembles_conditional_p: list) -> list:
     # p(a), p(b), p(c), ...
     dict_ensemble_p: dict = dict()
     for i in range(len(I_matrix)):
-        dict_ensemble_p[alphabet[i]] = format(I_matrix[i][len(I_matrix[0]) - 1], accurateness)
+        dict_ensemble_p[alphabet[i]] = float(format(I_matrix[i][len(I_matrix[0]) - 1], accurateness))
 
     print('p(a), p(b), p(c), ...\n', dict_ensemble_p)
     print()
 
     # [{p(x_i = a|x_i+1 = a), p(x_i = a|x_i+1 = b)},
     # {p(x_i = b|x_i+1 = a), p(x_i = b|x_i+1 = b)}]
-    result = find_full_conditional_p(list_ensembles_conditional_p, dict_ensemble_p)
+    result: list = find_full_conditional_p(list_ensembles_conditional_p, dict_ensemble_p)
 
     print('H_xi = ')
     p: list = list()
@@ -171,14 +200,16 @@ def markov_chain(list_ensembles_conditional_p: list) -> list:
         p.append(p_i)
     H_xi = entropy(p)
 
-    print('H_xi(x_i+1) = ')
     full_p: list = list()
     for lp_i in result:
         full_p += list(lp_i.values())
+    print('H(x_i x_i+1) = ')
     H_xi_xi_1 = entropy(full_p)
 
-    H_suffix_xi_xi_1 = np.float64(format(H_xi_xi_1 - H_xi, accurateness))
-    print(f'H_xi(x_i+1) = H(x_i x_i+1) - H(x_i) = {H_xi_xi_1} - {H_xi} = {H_suffix_xi_xi_1}')
+    print(f'1. H_xi(x_i+1) = H(x_i x_i+1) - H(x_i) = {H_xi_xi_1} - {H_xi} = {H_xi_xi_1 - H_xi}')
+
+    print(f'2. H_xi(x_i+1) = ')
+    H_suffix_xi_xi_1 = conditional_entropy(list_ensembles_conditional_p, dict_ensemble_p)
 
     return result
 
@@ -219,7 +250,7 @@ def main():
 
         # a|a, p(a|a)
         key, value = line
-        ensemble[key] = np.float64(value)
+        ensemble[key] = float(value)
 
         # В list_ensembles_conditional_p входят словари длиной sqrt(кол-во строчек).
         # Весь ввод данных оставляется на совесть пользователя. :)
@@ -232,7 +263,7 @@ def main():
     # Однако я предусмотрел проверку на валидность сумм вероятностей.
     def test_valid(l_ensemble: list) -> bool:
         for i in range(len(l_ensemble)):
-            summary: np.float64 = np.float64(0)
+            summary: float = 0
             for value in l_ensemble[i].values():
                 summary += value
             expr = (abs(1.0 - summary) < 1e-10)
