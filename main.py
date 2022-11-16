@@ -206,7 +206,7 @@ def markov_chain(list_ensembles_conditional_p: list) -> list:
     print('H(x_i x_i+1) = ')
     H_xi_xi_1 = entropy(full_p)
 
-    print(f'1. H_xi(x_i+1) = H(x_i x_i+1) - H(x_i) = {H_xi_xi_1} - {H_xi} = {H_xi_xi_1 - H_xi}')
+    print(f'1. H_xi(x_i+1) = H(x_i x_i+1) - H(x_i) = {H_xi_xi_1} - {H_xi} = {format(H_xi_xi_1 - H_xi, accurateness)}')
 
     print(f'2. H_xi(x_i+1) = ')
     H_suffix_xi_xi_1 = conditional_entropy(list_ensembles_conditional_p, dict_ensemble_p)
